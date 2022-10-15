@@ -92,7 +92,10 @@ class AIPlayer:
                             # print(f'State: {next_state}')
                         num_actions_next = len(get_valid_actions(3-self.player_number, next_state))
                         if(i==depth-1):
-                            points = (get_pts(self.player_number, next_state[0]) - get_pts(3-self.player_number, next_state[0]))
+                            if get_pts(3-self.player_number, next_state[0]) != 0:
+                                points = (get_pts(self.player_number, next_state[0]) - get_pts(3-self.player_number, next_state[0]))/get_pts(3-self.player_number, next_state[0])
+                            else:
+                                points = (get_pts(self.player_number, next_state[0]) - get_pts(3-self.player_number, next_state[0]))
                             # print(f'POINTS={points}')
                             tup = [next_state, points, j, num_actions_next]
                             level.append(tup)
@@ -108,7 +111,11 @@ class AIPlayer:
                         
                         num_actions_next = len(get_valid_actions(self.player_number, next_state))
                         if(i==depth-1):
-                            points = get_pts(self.player_number, next_state[0]) - get_pts(3-self.player_number, next_state[0])
+                            # points = (get_pts(self.player_number, next_state[0]) - get_pts(3-self.player_number, next_state[0]))/get_pts(3-self.player_number, next_state[0])
+                            if get_pts(3-self.player_number, next_state[0]) != 0:
+                                points = (get_pts(self.player_number, next_state[0]) - get_pts(3-self.player_number, next_state[0]))/get_pts(3-self.player_number, next_state[0])
+                            else:
+                                points = (get_pts(self.player_number, next_state[0]) - get_pts(3-self.player_number, next_state[0]))                            
                             # print(f'POINTS={points}')
                             tup = [next_state, points, j, num_actions_next]
                             level.append(tup)
