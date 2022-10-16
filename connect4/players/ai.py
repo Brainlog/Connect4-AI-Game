@@ -1,4 +1,6 @@
-import random
+import random as rd
+from shutil import which
+from webbrowser import get
 import numpy as np
 from typing import List, Tuple, Dict
 from connect4.utils import get_pts, get_valid_actions, Integer
@@ -55,8 +57,53 @@ class AIPlayer:
             # print(n, " these are keys, ", playernumber, " player number")
             # print(board)
             return (board,keys)
+    
+    def heuristicfn(self, playernumber, state, value, features):
+        board = state[0]
+        dict = [(0,"score"),(1,"diff"),(2,"relative"),(3,"featues")]
+        points = 0 
+        if value == 0:
+            points = get_pts(playernumber, board)
+        if value ==1:
+            points = get_pts(playernumber, board)-get_pts(3-playernumber, board)
+        if value == 2:
+            points = get_pts(playernumber, board)-get_pts(3-playernumber, board)
+            if get_pts(3-playernumber,board) != 0:
+                points = points/get_pts(3-playernumber,board)
+        if value == 3:
+            features_name = [(0,"pop_outs_left"),(1,"pop_outs_left_opposite"),(2,"points_opposite"),(3,"points"),(4,"4-cons"),(5,"3-cons"),(6,"2-cons"),(7,"whichplayer"),(8,"potential")]
+            # print("I AM HERE")
+            pop_outs_left = state[1][playernumber].get_int()
+            points += (features[0]*pop_outs_left)
+            pop_outs_left_opp = state[1][3-playernumber].get_int()
+            points += (features[1]*pop_outs_left_opp)            
+            points_opp = get_pts(3-playernumber,board)
+            points += (features[2]*points_opp)            
+            points_mine = get_pts(playernumber, board)
+            points += (features[3]*points_mine)            
+            cons4 = 0
+            points += (features[4]*cons4)            
+            cons3 = 0
+            points += (features[5]*cons3)            
+            cons2 = 0
+            points += (features[6]*cons2)            
+            # if features[7] == 1:
+            #     potential_diff = 1000
+            #     moves = get_valid_actions(3-playernumber,state)
+            #     for move in moves:
+            #         updated_state = self.state_update(state, move, 3-playernumber)
+            #         potential_diff = min(potential_diff, get_pts(3-playernumber,updated_state[0]))
+            #     points += (features[8]*potential_diff)    
+            # else:
+            #     potential_diff = 0
+            #     moves = get_valid_actions(playernumber,state)
+            #     for move in moves:
+            #         updated_state = self.state_update(state, move, playernumber)
+            #         potential_diff = max(potential_diff, get_pts(playernumber,updated_state[0]))
+            #     points += (features[8]*potential_diff) 
+        return points
         
-    def tree_create(self, state, depth, random, debug, heuiristic):
+    def tree_create(self, state, depth, random, debug, heuiristic, features):
         # fil = open("tree.txt", "a")
         tree = []
         num_actions = len(get_valid_actions(self.player_number, state))
@@ -82,65 +129,39 @@ class AIPlayer:
                     tup=[]
                     if(i%2 == 0):
                         next_move = get_valid_actions(self.player_number, curr_state)[k]
-                        # print(f'Tree here is [1] {tree}')
-                        # print(f'current state before : {curr_state}')
                         next_state = self.state_update(curr_state, next_move, self.player_number)
-                        # print(f'current state after: {curr_state}')
-                        
-                        # if(debug):
-                            # print(f"next move of player {self.player_number}: {next_move} in expanding node {j} of level {i}")
-                            # print(f'State: {next_state}')
                         num_actions_next = len(get_valid_actions(3-self.player_number, next_state))
                         if(i==depth-1):
-                            if heuiristic == 0:
-                                if get_pts(3-self.player_number, next_state[0]) != 0:
-                                    points = (get_pts(self.player_number, next_state[0])-get_pts(3-self.player_number, next_state[0]))/(get_pts(3-self.player_number, next_state[0]))
-                                else:
-                                    points = (get_pts(self.player_number, next_state[0])-get_pts(3-self.player_number, next_state[0]))
-                            if heuiristic == 1:
-                                points = get_pts(self.player_number, next_state[0])        
-                            # print(f'POINTS={points}')
+                            points = self.heuristicfn(self.player_number, next_state, heuiristic, features)   
+                            # points = get_pts(self.player_number, next_state[0])                                
                             tup = [next_state, points, j, num_actions_next]
                             level.append(tup)
                         else:
-                            tup = [next_state, 0, j, num_actions_next]
+                            if(random):
+                                tup = [next_state, 0, j, num_actions_next]
+                            else:
+                                tup = [next_state, 10000, j, num_actions_next]
                             level.append(tup)
                     else:
                         next_move = get_valid_actions(3-self.player_number, curr_state)[k]
                         next_state = self.state_update(curr_state, next_move, 3-self.player_number)
-                        # if(debug):
-                            # print(f"next move of player {3-self.player_number}: {next_move} in expanding node {j} of level {i}")
-                            # print(f'State: {next_state}')
                         
                         num_actions_next = len(get_valid_actions(self.player_number, next_state))
-                        if(i==depth-1):
-                            if heuiristic == 0:
-                                if get_pts(3-self.player_number, next_state[0]) != 0:
-                                    points = (get_pts(self.player_number, next_state[0])-get_pts(3-self.player_number, next_state[0]))/(get_pts(3-self.player_number, next_state[0]))
-                                else:
-                                    points = (get_pts(self.player_number, next_state[0])-get_pts(3-self.player_number, next_state[0]))    
-                            if heuiristic == 1:
-                                points = get_pts(self.player_number, next_state[0])                                                               
-                            # print(f'POINTS={points}')
+                        if(i==depth-1):  
+                            points = self.heuristicfn(self.player_number, next_state, heuiristic, features)  
+                            # points = get_pts(self.player_number, next_state[0])                                                       
                             tup = [next_state, points, j, num_actions_next]
                             level.append(tup)
                         else:
-                            tup = [next_state, 0, j, num_actions_next]
+                            if(random):
+                                tup = [next_state, 0, j, num_actions_next]
+                            else:
+                                tup = [next_state, -10000, j, num_actions_next]
+                            # tup = [next_state, 0, j, num_actions_next]
                             level.append(tup)
-                # print(f'Tree here is [2] {tree}')
-            # if(level==[]):
-            #     break
-            # print(f'level: {level}')
-            # print(f'Tree before appending level = {tree}')
+
             tree.append(level) 
-            
-            # print(f'Tree after appending level =')
-            # for i in range(0,len(tree)):
-                # print(f'Level {i}:\n{tree[i]}\n\n')
-            # fil.close()
-        # print(f'Tree before updating expectimax values:')
-        # for i in range(0,len(tree)):
-            # print(f'Level {i}:\n{tree[i]}\n\n')
+
         height = len(tree)
         
         for i in range(height-1,0,-1):
@@ -162,29 +183,43 @@ class AIPlayer:
                     else: #minimum value
                         tree[parent_level][parent_index][1] = min(tree[parent_level][parent_index][1], tree[curr_level][j][1])
         print(f'Tree after updating expectimax values:')
-        for i in range(0,len(tree)):
+        for i in range(0,2):
             print(f'Level {i}:\n{tree[i]}\n\n')
         pathselect = get_valid_actions(self.player_number, tree[0][0][0])[0]
-        for i in range(len(tree[1])):
-            if(tree[0][0][1]==tree[1][i][1]):
-                pathselect = get_valid_actions(self.player_number, tree[0][0][0])[i]
+        noofactions = len(get_valid_actions(self.player_number, tree[0][0][0]))
+        p = rd.randint(0,19)
+        if p == 5:
+            indexi = rd.randint(0,noofactions-1)
+            pathselect = get_valid_actions(self.player_number, tree[0][0][0])[indexi]
+        else:           
+            for i in range(noofactions):
+                # tree[0][0][1] = -100000
+                if(tree[0][0][1]==tree[1][i][1]):
+                    print("I AM HERE 16OCT")
+                    pathselect = get_valid_actions(self.player_number, tree[0][0][0])[i]
+                    tree[0][0][1] = tree[1][i][1]
+                    break
         return pathselect    
         # print(tree)         
     
 
 
     def get_intelligent_move(self, state: Tuple[np.array, Dict[int, Integer]]) -> Tuple[int, bool]:
+        # if self.player_number == 1:
+        #     choice = self.tree_create(state, 3, False, True, 0)
+        # if self.player_number == 2:
+        #     choice = self.tree_create(state, 3, False, True, 0) 
         if self.player_number == 1:
-            choice = self.tree_create(state, 3, False, True, 0)
-        if self.player_number == 2:
-            choice = self.tree_create(state, 3, False, True, 0)           
+         choice = self.tree_create(state, 3, False, True, 3,[1,0,0,1,0,0,0,1,-1]) 
+        else:
+         choice = self.tree_create(state, 3, False, True, 3, [1,-1,-1,1,0,0,0,1,-1])       
         print(f'Action selected by tree: {choice}')
         return choice 
         # Do the rest of your implementation here
         raise NotImplementedError('Whoops I don\'t know what to do')
 
     def get_expectimax_move(self, state: Tuple[np.array, Dict[int, Integer]]) -> Tuple[int, bool]:
-        choice = self.tree_create(state, 3, True, True, 0)
+        choice = self.tree_create(state, 3, True, True, 3,[1,-1,-1,1,0,0,0,1,-1])
         print(f'Action selected by tree: {choice}')
         return choice  
         # Do the rest of your implementation here
