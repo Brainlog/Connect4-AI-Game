@@ -92,10 +92,13 @@ class AIPlayer:
                             # print(f'State: {next_state}')
                         num_actions_next = len(get_valid_actions(3-self.player_number, next_state))
                         if(i==depth-1):
-                            if get_pts(3-self.player_number, next_state[0]) != 0:
-                                points = (get_pts(self.player_number, next_state[0]) - get_pts(3-self.player_number, next_state[0]))/get_pts(3-self.player_number, next_state[0])
-                            else:
-                                points = (get_pts(self.player_number, next_state[0]) - get_pts(3-self.player_number, next_state[0]))
+                            if heuiristic == 0:
+                                if get_pts(3-self.player_number, next_state[0]) != 0:
+                                    points = (get_pts(self.player_number, next_state[0])-get_pts(3-self.player_number, next_state[0]))/(get_pts(3-self.player_number, next_state[0]))
+                                else:
+                                    points = (get_pts(self.player_number, next_state[0])-get_pts(3-self.player_number, next_state[0]))
+                            if heuiristic == 1:
+                                points = get_pts(self.player_number, next_state[0])        
                             # print(f'POINTS={points}')
                             tup = [next_state, points, j, num_actions_next]
                             level.append(tup)
@@ -111,11 +114,13 @@ class AIPlayer:
                         
                         num_actions_next = len(get_valid_actions(self.player_number, next_state))
                         if(i==depth-1):
-                            # points = (get_pts(self.player_number, next_state[0]) - get_pts(3-self.player_number, next_state[0]))/get_pts(3-self.player_number, next_state[0])
-                            if get_pts(3-self.player_number, next_state[0]) != 0:
-                                points = (get_pts(self.player_number, next_state[0]) - get_pts(3-self.player_number, next_state[0]))/get_pts(3-self.player_number, next_state[0])
-                            else:
-                                points = (get_pts(self.player_number, next_state[0]) - get_pts(3-self.player_number, next_state[0]))                            
+                            if heuiristic == 0:
+                                if get_pts(3-self.player_number, next_state[0]) != 0:
+                                    points = (get_pts(self.player_number, next_state[0])-get_pts(3-self.player_number, next_state[0]))/(get_pts(3-self.player_number, next_state[0]))
+                                else:
+                                    points = (get_pts(self.player_number, next_state[0])-get_pts(3-self.player_number, next_state[0]))    
+                            if heuiristic == 1:
+                                points = get_pts(self.player_number, next_state[0])                                                               
                             # print(f'POINTS={points}')
                             tup = [next_state, points, j, num_actions_next]
                             level.append(tup)
@@ -123,7 +128,8 @@ class AIPlayer:
                             tup = [next_state, 0, j, num_actions_next]
                             level.append(tup)
                 # print(f'Tree here is [2] {tree}')
-                    
+            # if(level==[]):
+            #     break
             # print(f'level: {level}')
             # print(f'Tree before appending level = {tree}')
             tree.append(level) 
@@ -158,6 +164,7 @@ class AIPlayer:
         print(f'Tree after updating expectimax values:')
         for i in range(0,len(tree)):
             print(f'Level {i}:\n{tree[i]}\n\n')
+        pathselect = get_valid_actions(self.player_number, tree[0][0][0])[0]
         for i in range(len(tree[1])):
             if(tree[0][0][1]==tree[1][i][1]):
                 pathselect = get_valid_actions(self.player_number, tree[0][0][0])[i]
@@ -167,43 +174,16 @@ class AIPlayer:
 
 
     def get_intelligent_move(self, state: Tuple[np.array, Dict[int, Integer]]) -> Tuple[int, bool]:
-        """
-        Given the current state of the board, return the next move
-        This will play against either itself or a human player
-        :param state: Contains:
-                        1. board
-                            - a numpy array containing the state of the board using the following encoding:
-                            - the board maintains its same two dimensions
-                                - row 0 is the top of the board and so is the last row filled
-                            - spaces that are unoccupied are marked as 0
-                            - spaces that are occupied by player 1 have a 1 in them
-                            - spaces that are occupied by player 2 have a 2 in them
-                        2. Dictionary of int to Integer. It will tell the remaining popout moves given a player
-        :return: action (0 based index of the column and if it is a popout move)
-        """
-        choice = self.tree_create(state, 2, False, True, 0)
+        if self.player_number == 1:
+            choice = self.tree_create(state, 3, False, True, 0)
+        if self.player_number == 2:
+            choice = self.tree_create(state, 3, False, True, 0)           
         print(f'Action selected by tree: {choice}')
         return choice 
         # Do the rest of your implementation here
         raise NotImplementedError('Whoops I don\'t know what to do')
 
     def get_expectimax_move(self, state: Tuple[np.array, Dict[int, Integer]]) -> Tuple[int, bool]:
-        """
-        Given the current state of the board, return the next move based on
-        the Expecti max algorithm.
-        This will play against the random player, who chooses any valid move
-        with equal probability
-        :param state: Contains:
-                        1. board
-                            - a numpy array containing the state of the board using the following encoding:
-                            - the board maintains its same two dimensions
-                                - row 0 is the top of the board and so is the last row filled
-                            - spaces that are unoccupied are marked as 0
-                            - spaces that are occupied by player 1 have a 1 in them
-                            - spaces that are occupied by player 2 have a 2 in them
-                        2. Dictionary of int to Integer. It will tell the remaining popout moves given a player
-        :return: action (0 based index of the column and if it is a popout move)
-        """
         choice = self.tree_create(state, 3, True, True, 0)
         print(f'Action selected by tree: {choice}')
         return choice  
